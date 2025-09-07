@@ -1,5 +1,3 @@
-// Jenkinsfile - Varianta FINALĂ pentru Windows
-
 pipeline {
     agent any
 
@@ -20,11 +18,10 @@ pipeline {
             steps {
                 bat "docker run -d --name test-app-%BUILD_ID% -p 8081:80 php-todo-app:%BUILD_ID%"
                 
-                // CORECTAT: Folosim un truc cu PING pentru o pauză de 5 secunde. Este mai stabil.
                 bat 'ping -n 6 localhost > nul'
 
                 echo "Verificam daca aplicatia raspunde..."
-                bat "docker exec test--app-%BUILD_ID% curl --fail http://localhost/"
+                bat "docker exec test-app-%BUILD_ID% curl --fail http://localhost/"
                 echo "Testul a trecut cu succes!"
             }
         }
