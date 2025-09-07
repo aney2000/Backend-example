@@ -1,50 +1,44 @@
-// Jenkinsfile - Definește pipeline-ul CI/CD
+// Jenkinsfile - Varianta corectată pentru Windows
 
 pipeline {
-    agent any // Rulează pe orice agent Jenkins disponibil
+    agent any
 
     stages {
-        // Etapa 1: Preluarea codului sursă de pe GitHub
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
 
-        // Etapa 2: Construirea imaginii Docker
         stage('Build Docker Image') {
             steps {
-                script {
-                    docker.build("php-todo-app:${env.BUILD_ID}")
-                }
+                // Folosim 'bat' (Batch) pentru a rula comenzi în Windows
+                // Aceasta este echivalentul lui 'sh' pentru Windows
+                bat 'docker build -t php-todo-app:${env.BUILD_ID} .'
             }
         }
 
-        // Etapa 3: Rulare și Testare Simplă (Smoke Test)
         stage('Run & Test') {
             steps {
-                script {
-                    // Pornim containerul pe portul 8081 pentru a evita conflictul cu Jenkins
-                    sh "docker run -d --name test-app-${env.BUILD_ID} -p 8081:80 php-todo-app:${env.BUILD_ID}"
-                    
-                    sleep 5 // Așteptăm ca serverul să pornească
+                bat "docker run -d --name test-app-${env.BUILD_ID} -p 8081:80 php-todo-app:${env.BUILD_ID}"
+                
+                // Pe Windows, `sleep` este `timeout`
+                bat 'timeout /t 5'
 
-                    // Verificăm dacă aplicația răspunde corect
-                    echo "Verificam daca aplicatia raspunde..."
-                    sh "docker exec test-app-${env.BUILD_ID} curl --fail http://localhost/"
-                    echo "Testul a trecut cu succes!"
-                }
+                echo "Verificam daca aplicatia raspunde..."
+                bat "docker exec test-app-${env.BUILD_ID} curl --fail http://localhost/"
+                echo "Testul a trecut cu succes!"
             }
         }
     }
 
-    // Etapa finală: Curățenie, se execută întotdeauna
     post {
         always {
             script {
                 echo "Curatenie... oprire si stergere container de test."
-                sh "docker stop test-app-${env.BUILD_ID} || true"
-                sh "docker rm test-app-${env.BUILD_ID} || true"
+                // Folosim 'bat' și aici
+                bat "docker stop test-app-${env.BUILD_ID} || echo Container not found"
+                bat "docker rm test-app-${env.BUILD_ID} || echo Container not found"
             }
         }
     }
